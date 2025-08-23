@@ -1,0 +1,16 @@
+h1 {
+  font-family: 'Impact', sans-serif;
+  font-weight: 300;
+  color: #333;
+}
+
+body {
+ background-color: #353434;
+}
+
+.title {
+  background-color: #212020;
+  border: 4px groove white;  
+  border-radius: 5px;
+}
+
