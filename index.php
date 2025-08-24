@@ -1,5 +1,6 @@
 <?php 
 // Point de démarrage de l'application
+session_start();
 
 /*
 Chargement automatique des fichiers des classes quand on les utilise, sans devoir les inclure partout manuellement. 
@@ -31,4 +32,5 @@ if(file_exists("data.json")) {
 
 // Inclure le fichier qui affiche les tâches et le formulaire
 include "views/afficherTaches.php";
+
 

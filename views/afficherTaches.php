@@ -1,7 +1,101 @@
 <?php
-// Fichier de sauvegarde des ta^ches
-$dataFile = __DIR__ . '/../data.json';
-// Instanciation de l'objet "ListeDeTaches"
+// Fichier de sauvegarde des tâches
+$dataFile = __DIR__ . '/../data/data.json';
+
+// Créer ce fichier s'il n'existe pas
+if (!file_exists($dataFile)) {
+    file_put_contents($dataFile, json_encode(['users' => []], JSON_PRETTY_PRINT));
+}
+
+// Charger le contenu du fichier JSON et le convertir en tableau PHP
+// Si le fichier est vide ou invalide, initialiser un tableau avec une clé 'users' vide
+$data = json_decode(file_get_contents($dataFile), true) ?: ['users' => []];
+// Définir l'utilisateur comme connecté dans la session, sinon il est null
+$loggedInUser = $_SESSION['user'] ?? null;
+// Stockage les messages d'erreurs de connexion
+$error = '';
+
+// Authentification de l'utilisateur
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['auth_action'])) {
+    $username = trim($_POST['username']);
+    $password = $_POST['password'];
+
+    if ($_POST['auth_action'] === 'register') {
+        if (!isset($data['users'][$username])) 
+        {
+            $data['users'][$username] = [
+                'password' => password_hash($password, PASSWORD_DEFAULT)
+            ];
+
+            file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
+            $_SESSION['user'] = $username;
+            header("Location: index.php");
+            exit;
+        } else{
+            $error = "<div class='alert alert-danger' role='alert'>L'utilisateur existe déjà</div>.";
+        }
+    } elseif ($_POST['auth_action'] === 'login') {
+        if (isset($data['users'][$username]) && password_verify($password, $data['users'][$username]['password'])) {
+            $_SESSION['user'] = $username;
+            header("Location: index.php");
+            exit;
+        } else {
+            $error = "<div class='alert alert-danger' role='alert'>Identifiants invalides</div>.";
+        }
+    }
+}
+
+// Déconnexion de l'utilsiateur
+if (isset($_GET['logout'])) {
+    session_destroy();
+
+    header("Location: index.php");
+    exit;
+}
+
+// Si l'utilisateur n'est pas conecté, on affiche le formulaire 
+if (!$loggedInUser) {
+    ?>
+    <!DOCTYPE html>
+        <html lang="fr">
+            <head>
+                <meta charset="UTF-8">
+                <title>Connexion</title>
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+                <link href="css/style.css" rel="stylesheet">
+            </head>
+
+            <body class="d-flex justify-content-center align-items-center vh-100">
+                <div class="w-50">
+                    <h2 class="text-white">Connexion</h2>
+
+                    <?php if ($error) echo "<p class='text-danger mt-3'>$error</p>"; ?>
+
+                    <form method="post" class="mt-3 mb-4 text-white">
+                        <input type="hidden" name="auth_action" value="login">
+
+                        <div class="mb-3">
+                            <label>Nom d'utilisateur</label>
+                            <input type="text" name="username" class="form-control mt-3" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Mot de passe</label>
+                            <input type="password" name="password" class="form-control mt-3" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Connexion</button>
+                    </form>
+
+                    <p class="text-white">Vous n'avez pas de compte ? <a href="views/inscription.php" class="text-decoration-none"><span class="text-info">Inscrivez-vous</span></a></p>
+                </div>
+            </body>
+        </html>
+    <?php
+    exit;
+}
+
+// Gestion des tâches
+
+// Instanciation de l'objet ListeDeTaches
 $liste = new ListeDeTaches();
 
 // Catégories pour les tâches et sous tâches dans le "select"
@@ -15,9 +109,8 @@ $couleursCategories = [
     'Aucune' => 'dark'
 ];
 
-// Crée un objet "Tâche" à partir d'un tableau JSON
+// Fonction pour créer une tâche à partir d'un tableau
 function creerTacheDepuisArray(array $data): Tache {
-    // Création d'une nouvelle tache 
     $tache = new Tache(
         $data['titre'] ?? '',
         $data['categorie'] ?? 'Aucune',
@@ -27,40 +120,20 @@ function creerTacheDepuisArray(array $data): Tache {
         $data['urgente'] ?? false
     );
 
-    // Vérifier si la tâche est archivéee
-    if (isset($data['archivee'])) {
-        // On applique la valeur via la fonction "setArchivee"
-        $tache->setArchivee($data['archivee']);
-    }
+    if (isset($data['archivee'])) $tache->setArchivee($data['archivee']);
 
-    // Vérifier si il y a des sous-tâches liées à la tâche
     if (!empty($data['sousTaches'])) {
-        // On leur parcours toutes et on les ajoute à la tâche
         foreach ($data['sousTaches'] as $st) {
             $tache->ajouterSousTache(creerTacheDepuisArray($st));
         }
     }
-
-    // Retourner les informations de la tâche à afficher
     return $tache;
 }
 
-// Charger les tâches depuis le fichier JSON
-
-// Vérifier si le fichier existe 
-if (file_exists($dataFile)) {
-    // Lire le contenu complet du fichier JSON 
-    $json = file_get_contents($dataFile);
-    // Décoder le tableau JSON en tableau associatif PHP 
-    $tachesArray = json_decode($json, true);
-
-    // Vérifier que le résultat du décodage est bien un tableau 
-    if (is_array($tachesArray)) {
-        // Parcourt de chaque élément du tableau, chaque élément représentant une tâche
-        foreach ($tachesArray as $tacheData) {
-            // Créer un objet "Tache" à partir du tableau et l'ajouter à la liste 
-            $liste->ajouterTache(creerTacheDepuisArray($tacheData));
-        }
+// Charger les tâches de l'utilisateur connecté
+if ($loggedInUser && isset($data['users'][$loggedInUser]['tasks'])) {
+    foreach ($data['users'][$loggedInUser]['tasks'] as $tacheData) {
+        $liste->ajouterTache(creerTacheDepuisArray($tacheData));
     }
 }
 
@@ -262,31 +335,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
     } 
 
-    /// Sauvegarde toutes les tâches dans le fichier JSON avec mise en forme
-    file_put_contents($dataFile, json_encode($liste->toArray(), JSON_PRETTY_PRINT));
+    $data['users'][$loggedInUser]['tasks'] = $liste->toArray();
+    // Sauvegarder toutes les tâches dans le fichier JSON avec mise en forme
+    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
     // Redirige vers la même page pour éviter le resoumission du formulaire
     header("Location: " . $_SERVER['PHP_SELF']);
     exit;
 }
 
-// Filtrage par recherche et état
+// Filtrage et affichage
 $recherche = $_GET['recherche'] ?? '';
 $filtre = $_GET['filtre'] ?? 'toutes';
 $tachesAffichees = $liste->getTaches();
 
-if ($filtre === 'terminees') {
-    $tachesAffichees = array_filter($tachesAffichees, fn($t) => $t->estTerminee());
-} elseif ($filtre === 'non-terminees') {
-    $tachesAffichees = array_filter($tachesAffichees, fn($t) => !$t->estTerminee());
-}
+if ($filtre === 'terminees') $tachesAffichees = array_filter($tachesAffichees, fn($t) => $t->estTerminee());
+elseif ($filtre === 'non-terminees') $tachesAffichees = array_filter($tachesAffichees, fn($t) => !$t->estTerminee());
 
-if ($recherche !== '') {
-    $tachesAffichees = array_filter($tachesAffichees, fn($t) => stripos($t->getTitre(), $recherche) !== false);
-}
+if ($recherche !== '') $tachesAffichees = array_filter($tachesAffichees, fn($t) => stripos($t->getTitre(), $recherche) !== false);
 
 // Détection alertes 48h
 $alertTaches = [];
 $now = new DateTime();
+
 foreach ($liste->getTaches() as $tache) {
     if ($tache->getDateEcheance()) {
         $diff = $now->diff($tache->getDateEcheance());
@@ -310,7 +380,14 @@ foreach ($liste->getTaches() as $tache) {
 
         <body>
             <div class="container mt-5">
-                <div class="title"><h1 class="text-info">📝 Task Manager</h1></div>           
+                <div class="title"><h1 class="text-info">📝 Task Manager</h1></div>   
+                
+                <?php if ($loggedInUser): ?>
+                    <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+                        <h3 class="text-white">Bienvenue, <?= htmlspecialchars($loggedInUser) ?></h3>
+                        <a href="?logout=1" class="btn btn-danger"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                    </div>
+                <?php endif; ?>
 
                 <form method="GET" class="mt-4 mb-3 recherche">
                     <div class="input-group">
@@ -333,15 +410,13 @@ foreach ($liste->getTaches() as $tache) {
                     <button type="submit" class="btn btn-primary"><i class="bi bi-plus"></i> Ajouter</button>
                 </form>
 
-               <div class="d-flex justify-content-between align-items-center mb-5 mt-4">
-                    <!-- Filtres à gauche -->
+               <div class="d-flex justify-content-between align-items-center mb-5 mt-4">                   
                     <form method="GET" class="d-flex gap-2">
                         <button type="submit" name="filtre" value="toutes" class="btn btn-outline-primary <?= ($_GET['filtre'] ?? 'toutes') === 'toutes' ? 'active' : '' ?>">Toutes</button>
                         <button type="submit" name="filtre" value="terminees" class="btn btn-outline-success <?= ($_GET['filtre'] ?? '') === 'terminees' ? 'active' : '' ?>">Terminées</button>
                         <button type="submit" name="filtre" value="non-terminees" class="btn btn-outline-secondary <?= ($_GET['filtre'] ?? '') === 'non-terminees' ? 'active' : '' ?>">Non terminées</button>
                     </form>
 
-                    <!-- Boutons priorisation à droite -->
                     <div class="d-flex gap-2">
                         <form method="post">
                             <input type="hidden" name="action" value="prioriser_toutes">
@@ -353,7 +428,7 @@ foreach ($liste->getTaches() as $tache) {
                         </form>
                     </div>
                 </div>
-
+               
                 <?php if (!empty($alertTaches)): ?>
                     <div id="alert-taches" class="alert alert-info alert-dismissible fade show mt-3 text-center mb-4" role="alert">
                         <?php if (count($alertTaches) === 1): ?> 

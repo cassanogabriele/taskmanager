@@ -6,7 +6,7 @@ class ListeDeTaches {
     // Tableau privé qui stocke toutes les tâches 
     private array $taches = [];
     // Chemin vers le fichier JSON qui stocke les tâches
-    private string $fichier = __DIR__ . '/../data.json';
+    private string $fichier = __DIR__ . '/../data/data.json';
     // Tableau privé qui stocke toutes les sous-tâches
     private array $sousTaches = [];
 
@@ -64,14 +64,24 @@ class ListeDeTaches {
         }
     }
 
-    // 6. Mettre à jour le fichier "data.json" avec l'état actuel des tâches
+    // 6. Mettre à jour le fichier "data.json" avec l'état actuel des tâches   
     private function sauvegarderData(): void 
     {
-        // Convertir toutes les tâches en tableau
-        $data = $this->toArray();
-        // Écrire les données dans le fichier JSON
+        // Charger tout le fichier JSON existant
+        $data = file_exists($this->fichier) ? json_decode(file_get_contents($this->fichier), true) : ['users' => []];
+
+        // Identifier l’utilisateur connecté
+        $username = $_SESSION['user'] ?? null;
+        if ($username) {
+            // Sauvegarder les tâches de CE user uniquement
+            $data['users'][$username]['tasks'] = $this->toArray();
+        }
+
+        // Réécrire le fichier
         file_put_contents($this->fichier, json_encode($data, JSON_PRETTY_PRINT));
     }
+
+
 
     // 7. Modifier une tâche existante 
     public function modifierTache(string $nouveauTitre, ?DateTime $nouvelleDate = null, ?string $nouvelleCategorie = null): void 
