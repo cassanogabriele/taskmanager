@@ -1,14 +1,14 @@
 {
     "users": {
-        "gabriele1": {
-            "password": "$2y$10$5z1svd26LrVnGf3FK1bRnu410aUCQ9SohZ12Z1q1DRT2zJ5YkM15G",
+        "user1": {
+            "password": "",
             "tasks": [
                 {
-                    "titre": "ga01-01",
-                    "categorie": "Aucune",
-                    "terminee": true,
-                    "dateEcheance": "12-08-2025",
-                    "prioritaire": true,
+                    "titre": "",
+                    "categorie": "",
+                    "terminee": false,
+                    "dateEcheance": "",
+                    "prioritaire": false,
                     "urgente": false,
                     "ancienneCategorie": null,
                     "archivee": false,
@@ -16,55 +16,16 @@
                 }
             ]
         },
-        "gabriele2": {
-            "password": "$2y$10$plfIcLe5o9ezoMJ\/4NGHou8QdyklxtMpwjo61TLmr8HhIM.c4K3Jy",
+        "user2": {
+            "password": "",
             "tasks": [
                 {
-                    "titre": "ga02-01",
-                    "categorie": "Urgent",
+                    "titre": "",
+                    "categorie": "",
                     "terminee": false,
-                    "dateEcheance": "19-08-2025",
+                    "dateEcheance": "",
                     "prioritaire": false,
                     "urgente": true,
-                    "ancienneCategorie": null,
-                    "archivee": false,
-                    "sousTaches": []
-                }
-            ]
-        },
-        "gabriele3": {
-            "password": "$2y$10$DkyEUR7wqjXJWyAQdtKtU.AA35Xyta3..HzKUE1ZSIS5Z6r0S7age",
-            "tasks": [
-                {
-                    "titre": "ga03-1",
-                    "categorie": "Autre",
-                    "terminee": false,
-                    "dateEcheance": "23-08-2025",
-                    "prioritaire": false,
-                    "urgente": false,
-                    "ancienneCategorie": null,
-                    "archivee": false,
-                    "sousTaches": [
-                        {
-                            "titre": "st01",
-                            "categorie": "Aucune",
-                            "terminee": false,
-                            "dateEcheance": null,
-                            "prioritaire": false,
-                            "urgente": false,
-                            "ancienneCategorie": null,
-                            "archivee": false,
-                            "sousTaches": []
-                        }
-                    ]
-                },
-                {
-                    "titre": "ga03-2",
-                    "categorie": "Personnel",
-                    "terminee": false,
-                    "dateEcheance": "19-08-2025",
-                    "prioritaire": false,
-                    "urgente": false,
                     "ancienneCategorie": null,
                     "archivee": false,
                     "sousTaches": []
